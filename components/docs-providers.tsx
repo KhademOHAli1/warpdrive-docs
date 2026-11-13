@@ -26,7 +26,7 @@ function StaticSearchDialog(props: SharedProps) {
   return (
     <SearchDialog {...props} {...search}>
       <SearchDialogOverlay />
-      <SearchDialogContent>
+      <SearchDialogContent className="bg-fd-background text-fd-foreground">
         <SearchDialogHeader>
           <SearchDialogIcon />
           <SearchDialogInput aria-label="Search documentation" />
@@ -36,7 +36,7 @@ function StaticSearchDialog(props: SharedProps) {
         <SearchDialogFooter>
           <Link
             href={fullResults}
-            className="text-sm text-fd-primary hover:underline"
+            className="text-sm text-(--color-warpdrive-link) hover:underline"
             onClick={() => props.onOpenChange(false)}
           >
             Open full search

@@ -42,6 +42,14 @@ the static export for navigation, existing bookmarks, links, and assets. The
 preview artifact contains both repository revisions in `preview-provenance.json`.
 The workflow only uploads an artifact for review.
 
+## CRM color tokens
+
+Staging extracts the shared light and dark color values from the same Warpdrive
+commit as the guides. It reads the token declarations in `src/app/globals.css`
+and writes an allowlisted palette to `.content-theme/palette.css`. Fumadocs
+maps its colors to that palette in `app/globals.css`. Change shared color values
+in Warpdrive, then advance the content revision for the standalone preview.
+
 ## Fumadocs updates
 
 Dependabot checks for releases daily at 07:00 Europe/Berlin and groups updates to
