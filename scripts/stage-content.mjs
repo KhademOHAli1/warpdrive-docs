@@ -5,11 +5,15 @@ import {
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { extractCrmPalette } from "./theme-palette.mjs";
 
 const renderer = await realpath(fileURLToPath(new URL("../", import.meta.url)));
 const guideRoot = "docs-site/docs";
 const imageRoot = "docs-site/public/img";
-const stageRoots = ["docs", "public/img"];
+const paletteSource = "src/app/globals.css";
+const paletteRoot = ".content-theme";
+const paletteFile = `${paletteRoot}/palette.css`;
+const stageRoots = ["docs", "public/img", paletteRoot];
 const receiptFile = ".staged-content.json";
 const maxBytes = 32 * 1024 * 1024;
 const maxFiles = 2_000;
@@ -31,6 +35,7 @@ function sha256(bytes) {
 }
 
 function publicEntry(path) {
+  if (path === paletteSource) return paletteFile;
   if (path.startsWith(guideRoot + "/")) {
     const name = path.slice(guideRoot.length + 1);
     require(/^(?:[a-z0-9-]+\/)*(?:[a-z0-9-]+\.mdx?|meta\.json)$/.test(name),
@@ -161,7 +166,7 @@ async function stage(checkout) {
   require(renderer !== checkout, "Renderer and content checkouts must be distinct");
   const revision = git(checkout, ["rev-parse", "--verify", "HEAD^{commit}"]).toString("ascii").trim();
   require(/^[0-9a-f]{40}$/.test(revision), "A full Warpdrive Git commit is required");
-  const listing = git(checkout, ["ls-tree", "-rlz", revision, "--", guideRoot, imageRoot])
+  const listing = git(checkout, ["ls-tree", "-rlz", revision, "--", guideRoot, imageRoot, paletteSource])
     .toString("utf8").split("\0").filter(Boolean);
   require(listing.length > 0 && listing.length <= maxFiles, "Unexpected public tree size");
 
@@ -179,6 +184,7 @@ async function stage(checkout) {
     entries.set(path, { blob, size });
   }
   require(entries.has("public/img/favicon.ico") && entries.has("public/img/logo.png"), "Missing site branding");
+  require(entries.has(paletteFile), `Missing CRM palette source: ${paletteSource}`);
 
   const lock = join(renderer, ".stage-content.lock");
   await mkdir(lock);
@@ -193,10 +199,11 @@ async function stage(checkout) {
       require(bytes.length === size, `Unexpected Git blob size: ${path}`);
       checkImage(path, bytes);
       if (path.endsWith("/meta.json")) pages.set(path, parseMeta(path, bytes));
+      const stagedBytes = path === paletteFile ? Buffer.from(extractCrmPalette(bytes.toString("utf8"))) : bytes;
       const target = join(temp, path);
       await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, bytes, { flag: "wx" });
-      hashes[path] = sha256(bytes);
+      await writeFile(target, stagedBytes, { flag: "wx" });
+      hashes[path] = sha256(stagedBytes);
     }
     checkSidebar(entries, pages);
     await writeFile(join(temp, receiptFile), JSON.stringify({ revision, files: hashes }, null, 2) + "\n", {

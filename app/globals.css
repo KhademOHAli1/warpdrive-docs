@@ -1,13 +1,80 @@
 @import "tailwindcss";
-@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/lib/default-colors.css";
 @import "fumadocs-ui/css/preset.css";
+@import "../.content-theme/palette.css";
 
-:root {
-  --color-fd-primary: #257148;
+/* Resolve aliases in each mode, where Warpdrive defines the source tokens. */
+:root,
+.dark {
+  --color-fd-background: hsl(var(--background));
+  --color-fd-foreground: hsl(var(--foreground));
+  --color-fd-muted: hsl(var(--muted));
+  --color-fd-muted-foreground: hsl(var(--muted-foreground));
+  --color-fd-popover: hsl(var(--popover));
+  --color-fd-popover-foreground: hsl(var(--popover-foreground));
+  --color-fd-card: hsl(var(--card));
+  --color-fd-card-foreground: hsl(var(--card-foreground));
+  --color-fd-border: hsl(var(--border));
+  --color-fd-primary: hsl(var(--primary));
+  --color-fd-primary-foreground: hsl(var(--primary-foreground));
+  --color-fd-secondary: hsl(var(--secondary));
+  --color-fd-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-fd-accent: hsl(var(--accent));
+  --color-fd-accent-foreground: hsl(var(--accent-foreground));
+  --color-fd-ring: hsl(var(--ring));
+  --color-fd-error: hsl(var(--destructive));
+  --color-fd-warning: hsl(var(--warning));
+  --color-fd-success: hsl(var(--success));
+  --color-warpdrive-link: var(--link);
+  --color-warpdrive-action: var(--action);
+  --color-warpdrive-action-foreground: var(--action-foreground);
 }
 
-.dark {
-  --color-fd-primary: #32d8b4;
+#nd-notebook-layout {
+  background: color-mix(in srgb, var(--color-fd-muted) 70%, var(--color-fd-background));
+}
+
+#nd-subnav,
+#nd-sidebar,
+#nd-sidebar-mobile {
+  background: var(--color-fd-background);
+}
+
+#nd-subnav [data-header-body] {
+  border-color: hsl(var(--border) / 0.65);
+}
+
+#nd-sidebar {
+  border-inline-end: 1px solid var(--color-fd-border);
+}
+
+#nd-subnav [data-search-full] {
+  background: color-mix(in srgb, var(--color-fd-muted) 40%, var(--color-fd-card));
+  border-color: hsl(var(--border) / 0.8);
+}
+
+:is(#nd-sidebar, #nd-sidebar-mobile) :is(a, button):hover {
+  background: var(--color-fd-accent);
+  color: var(--color-fd-foreground);
+}
+
+:is(#nd-sidebar, #nd-sidebar-mobile) a[data-active="true"] {
+  background: color-mix(in srgb, var(--action) 10%, var(--color-fd-background));
+  color: var(--action);
+}
+
+:is(#nd-sidebar, #nd-sidebar-mobile) a[data-active="true"]::before,
+.warpdrive-mark {
+  background: var(--action);
+}
+
+.warpdrive-mark {
+  mask: url("/img/logo.png") center / contain no-repeat;
+}
+
+.warpdrive-docs article .prose a:not([data-card], [href^="#"]),
+.warpdrive-docs :is(#nd-toc, #nd-tocnav) a[data-active="true"] {
+  color: var(--link);
 }
 
 .warpdrive-docs img {
@@ -18,7 +85,7 @@
   scroll-margin-top: 5rem;
 }
 
-.warpdrive-docs a:focus-visible {
-  outline: 2px solid var(--color-fd-primary);
+.warpdrive-docs :is(a, button, input):focus-visible {
+  outline: 2px solid var(--color-fd-ring);
   outline-offset: 3px;
 }

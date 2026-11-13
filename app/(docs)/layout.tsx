@@ -1,5 +1,4 @@
 import { DocsLayout } from "fumadocs-ui/layouts/notebook";
-import Image from "next/image";
 import type { ReactNode } from "react";
 import { REPOSITORY_URL, WEBSITE_URL } from "@/lib/site";
 import { source } from "@/lib/source";
@@ -12,7 +11,7 @@ export default function PublicDocsLayout({ children }: { children: ReactNode }) 
         mode: "top",
         title: (
           <>
-            <Image src="/img/logo.png" alt="" width={28} height={28} />
+            <span aria-hidden="true" className="warpdrive-mark size-7 shrink-0" />
             <span>Warpdrive</span>
           </>
         ),

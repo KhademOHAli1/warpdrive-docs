@@ -43,9 +43,11 @@ jobs:
           ref: ${{ steps.content.outputs.revision }}
           path: .content-source
           persist-credentials: false
+          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            docs-site/docs
-            docs-site/public/img
+            /docs-site/docs/
+            /docs-site/public/img/
+            /src/app/globals.css
       - name: Set up package-pinned Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:

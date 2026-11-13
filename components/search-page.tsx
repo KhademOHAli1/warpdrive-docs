@@ -43,11 +43,11 @@ export function SearchPage() {
           value={search}
           placeholder="Search the guides"
           onChange={(event) => onSearchChange(event.currentTarget.value)}
-          className="min-w-40 flex-1 rounded-lg border bg-fd-background px-3 py-2"
+          className="min-w-40 flex-1 rounded-lg border border-[hsl(var(--input))] bg-fd-background px-3 py-2"
         />
         <button
           type="submit"
-          className="rounded-lg bg-fd-primary px-4 py-2 font-medium text-fd-primary-foreground"
+          className="rounded-lg bg-(--color-warpdrive-action) px-4 py-2 font-medium text-(--color-warpdrive-action-foreground)"
         >
           Search
         </button>
@@ -70,7 +70,7 @@ export function SearchPage() {
                   {item.breadcrumbs.join(" / ")}
                 </p>
               )}
-              <Link href={item.url} className="text-fd-primary hover:underline">
+              <Link href={item.url} className="text-(--color-warpdrive-link) hover:underline">
                 {item.content}
               </Link>
             </li>
