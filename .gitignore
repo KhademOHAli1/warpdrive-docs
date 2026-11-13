@@ -1,0 +1,15 @@
+/node_modules/
+/.next/
+/.source/
+/out/
+/next-env.d.ts
+/*.tsbuildinfo
+/.env*.local
+.DS_Store
+/docs/
+/public/img/
+/.content-source/
+/.staged-content.json
+/.stage-content.lock/
+/.stage-content-*/
+/preview-provenance.json
