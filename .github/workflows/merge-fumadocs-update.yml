@@ -1,0 +1,95 @@
+name: Merge verified Fumadocs updates
+
+on:
+  workflow_run:
+    workflows: [Documentation renderer preview]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  merge:
+    if: >-
+      github.repository == 'KhademOHAli1/warpdrive-docs' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
+      github.event.workflow_run.head_repository.id == github.event.repository.id &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/bun/fumadocs-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: read
+    steps:
+      # This privileged job only reads GitHub API data. It never checks out the PR or downloads its artifacts.
+      - name: Verify the tested dependency diff and merge it
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! candidate=$(jq -er '
+            .workflow_run
+            | select(.path == ".github/workflows/docs-preview.yml")
+            | select(.head_sha | test("^[a-f0-9]{40}$"))
+            | select(.head_branch | test("^dependabot/bun/fumadocs-[a-z0-9-]+$"))
+            | [.head_sha, .head_branch] | @tsv
+          ' "$GITHUB_EVENT_PATH"); then
+            echo 'The completed preview has no eligible Fumadocs head.'
+            exit 0
+          fi
+          IFS=$'\t' read -r head_sha branch <<< "$candidate"
+
+          endpoint="repos/$GITHUB_REPOSITORY"
+          base_sha=$(gh api "$endpoint/git/ref/heads/main" --jq '.object.sha')
+          pull_requests=$(gh api --method GET "$endpoint/pulls" -f state=open -f base=main \
+            -f "head=${GITHUB_REPOSITORY%%/*}:$branch")
+          if ! pr=$(jq -er --arg repo "$GITHUB_REPOSITORY" --arg head "$head_sha" \
+            --arg base "$base_sha" --arg branch "$branch" '
+              map(select(.state == "open" and .draft == false and .user.login == "dependabot[bot]"
+                and .head.repo.full_name == $repo and .head.ref == $branch and .head.sha == $head
+                and .base.repo.full_name == $repo and .base.ref == "main" and .base.sha == $base))
+              | select(length == 1) | .[0].number | select(. > 0)
+            ' <<< "$pull_requests"); then
+            echo 'The completed preview no longer matches an open Dependabot PR.'
+            exit 0
+          fi
+
+          comparison=$(gh api "$endpoint/compare/$base_sha...$head_sha")
+          if ! jq -e --arg base "$base_sha" --arg head "$head_sha" '
+            .status == "ahead" and .merge_base_commit.sha == $base
+            and .total_commits > 0 and .total_commits == (.commits | length)
+            and .commits[-1].sha == $head
+            and all(.commits[]; .author.login == "dependabot[bot]" and .committer.login == "web-flow"
+              and .commit.verification.verified == true)
+            and ([.files[] | select(.status == "modified") | .filename] | sort) == ["bun.lock", "package.json"]
+            and (.files | length) == 2
+          ' <<< "$comparison" >/dev/null; then
+            echo 'The diff includes unverified commits or changes beyond the dependency manifest and lockfile.'
+            exit 0
+          fi
+
+          base_manifest=$(gh api "$endpoint/contents/package.json?ref=$base_sha" --header 'Accept: application/vnd.github.raw+json')
+          head_manifest=$(gh api "$endpoint/contents/package.json?ref=$head_sha" --header 'Accept: application/vnd.github.raw+json')
+          if ! jq -ne --argjson base "$base_manifest" --argjson head "$head_manifest" '
+            def strip_fumadocs: del(.dependencies["fumadocs-core", "fumadocs-mdx", "fumadocs-ui"]);
+            def stable: type == "string" and test("^(0|[1-9][0-9]{0,8})(\\.(0|[1-9][0-9]{0,8})){2}$");
+            def version: split(".") | map(tonumber);
+            ($base | strip_fumadocs) == ($head | strip_fumadocs)
+            and (["fumadocs-core", "fumadocs-mdx", "fumadocs-ui"] | map(. as $name
+              | {old: $base.dependencies[$name], new: $head.dependencies[$name]})) as $pins
+            | any($pins[]; .old != .new)
+            and all($pins[]; (.old | stable) and (.new | stable)
+              and ((.old | version | .[0]) == (.new | version | .[0]))
+              and ((.old | version) <= (.new | version)))
+          ' >/dev/null; then
+            echo 'Automatic merging requires only stable Fumadocs patch or minor upgrades.'
+            exit 0
+          fi
+
+          # Required checks on up-to-date main and the head SHA guard concurrent PR edits.
+          gh api --method PUT "$endpoint/pulls/$pr/merge" -f "sha=$head_sha" -f merge_method=squash \
+            | jq -e '.merged == true'
+          # A merge made with GITHUB_TOKEN does not trigger the push workflow.
+          gh workflow run docs-preview.yml --repo "$GITHUB_REPOSITORY" --ref main
