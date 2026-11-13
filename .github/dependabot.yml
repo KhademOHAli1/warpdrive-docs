@@ -6,13 +6,24 @@ updates:
       interval: cron
       cronjob: "0 7 * * *"
       timezone: Europe/Berlin
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 2
     commit-message:
       prefix: "chore(deps)"
     groups:
+      fumadocs:
+        patterns:
+          - fumadocs-core
+          - fumadocs-mdx
+          - fumadocs-ui
       docs-dependencies:
         patterns:
           - "*"
+      fumadocs-security:
+        applies-to: security-updates
+        patterns:
+          - fumadocs-core
+          - fumadocs-mdx
+          - fumadocs-ui
       docs-security:
         applies-to: security-updates
         patterns:

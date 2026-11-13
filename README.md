@@ -42,6 +42,20 @@ the static export for navigation, existing bookmarks, links, and assets. The
 preview artifact contains both repository revisions in `preview-provenance.json`.
 The workflow only uploads an artifact for review.
 
+## Fumadocs updates
+
+Dependabot checks for releases daily at 07:00 Europe/Berlin and groups updates to
+`fumadocs-core`, `fumadocs-ui`, and `fumadocs-mdx`. A verified Dependabot pull
+request containing only compatible minor or patch upgrades to those packages and
+their lockfile can merge automatically after the full renderer preview passes.
+Major upgrades and other dependencies use the same preview checks and require
+manual review. GitHub deletes temporary branches after merge.
+
+After an automatic merge, the workflow runs the renderer preview on `main` to
+produce a new static export and provenance. This artifact is ready for the
+separate hosting promotion. Warpdrive's `docs-site/renderer.lock` controls
+which renderer revision its own documentation checks use.
+
 Warpdrive's [hosting guide](https://github.com/KhademOHAli1/warpdrive/blob/main/docs/development/public-docs-migration.md)
 covers host promotion and rollback. The renderer uses Warpdrive's existing MIT
 license. Screenshot authorship and capture instructions remain with the
